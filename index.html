@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Classic Player</title>
+
+    <!-- PWA-ish bits (optional, but nice on iPhone) -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Classic Player" />
+
+    <style>
+      html, body, #app { height: 100%; margin: 0; }
+      #add { position: fixed; left: 8px; bottom: 8px; z-index: 998; }
+      #filepicker { position: fixed; left: 8px; bottom: 8px; z-index: 999; opacity: 0.001; width: 44px; height: 44px; }
+      /* Prevent iOS text selection while dragging the UI */
+      * { -webkit-user-select: none; user-select: none; }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+
+    <!-- Hidden file input + visible button to add audio from Archivos/iCloud -->
+    <input id="filepicker" type="file" accept="audio/*" multiple />
+    <button id="add">Añadir canciones</button>
+
+    <script type="module">
+      // Carga Webamp desde un CDN (no hace falta instalar nada)
+      import Webamp from "https://unpkg.com/webamp@^2";
+
+      const webamp = new Webamp({
+        // Activa controles del sistema (pantalla de bloqueo, botones de auriculares)
+        enableMediaSession: true,
+        // Opcional: al cargar, abre solo la ventana principal + playlist (mejor para móvil)
+        windowLayout: {
+          main: { position: { top: 0, left: 0 }, closed: false, shadeMode: false },
+          playlist: { position: { top: 116, left: 0 }, closed: false, size: { extraHeight: 6, extraWidth: 0 } },
+          equalizer: { position: { top: 232, left: 0 }, closed: true }
+        }
+        // Para usar una skin clásica más tarde:
+        // initialSkin: { url: "PON_AQUI_LA_URL_DE_TU_SKIN.wsz" }
+      });
+
+      // Monta la app en pantalla
+      webamp.renderWhenReady(document.getElementById("app"));
+
+      // Botón "Añadir canciones" -> abre selector de archivos
+      const fileInput = document.getElementById("filepicker");
+      const addBtn = document.getElementById("add");
+      addBtn.addEventListener("click", () => fileInput.click());
+
+      // Convierte los ficheros seleccionados en "tracks" que Webamp entiende
+      fileInput.addEventListener("change", (e) => {
+        const files = Array.from(e.target.files || []);
+        const tracks = files.map((file) => ({
+          blob: file,
+          metaData: { title: file.name }
+        }));
+        webamp.appendTracks(tracks);
+        // Limpia el input para poder volver a añadir los mismos ficheros si quieres
+        e.target.value = "";
+      });
+
+      // (Opcional) Título en controles del sistema
+      if ("mediaSession" in navigator) {
+        navigator.mediaSession.metadata = new MediaMetadata({ title: "Classic Player" });
+      }
+    </script>
+  </body>
+</html>
